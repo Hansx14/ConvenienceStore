@@ -1,0 +1,428 @@
+﻿*{
+    font-family: work-sans, sans-serif;
+}
+
+body {
+    background-color: #EDE5D7;
+}
+
+.header {
+    font-size: 8px;
+    padding: 10px;
+    width: 98.3vw;
+    margin-left: -7px;
+}
+
+
+.functions {
+    display: flex;
+    flex-direction: column; /* Arrange items in a column */
+    gap: 10px; /* Space between buttons */
+    padding: 10px;
+    background-color: white;
+    font-size: 8px;
+    width: 15vw;
+    height: 84.2vh;
+    border-style: solid;
+    border-width: 1px;
+    border-color: #EDE5D7;
+    margin-left: -7px;
+}
+
+    .functions button {
+        padding: 10px;
+        border: none;
+        background-color: white;
+        font-size: small;
+        font-weight: 600;
+        text-align: left;
+        transition: background-color 0.3s, color 0.3s;
+    }
+
+        .functions button:hover {
+            background: linear-gradient(265.27deg, #eeae3f 20.55%, #bd9d66 94.17%);
+            color: white;
+            border-radius: 10px;
+        }
+
+
+@media (max-width: 480px) {
+    .inventory {
+        width: 90vw;
+        height: 40vh;
+    }
+
+    .functions {
+        width: 90vw;
+        height: 40vh;
+    }
+}
+
+@media (max-width: 768px) { /* For tablets or smaller screens */
+    .inventory {
+        width: 90vw;
+        height: 40vh;
+    }
+
+    .functions {
+        width: 90vw;
+        height: 40vh;
+    }
+}
+
+/* ------------------------- INVENTORY MANAGEMENT ---------------------------*/
+.inventory table {
+    border-style: solid;
+    border-width: 1px;
+    border-color: rgb(189, 189, 190);
+    width: 75vw;
+    border-collapse: collapse; /* Removes gaps between cells for a cleaner look */
+}
+
+    .inventory table th,
+    .inventory table td {
+        border-bottom: 1px solid rgb(189, 189, 190); /* Adds border below table cells */
+        text-align: center;
+        padding: 10px;
+    }
+
+    .inventory table th {
+        position: sticky;
+        top: 0;
+        background-color: white;
+    }
+
+    .inventory table td {
+        color: #6d7074;
+    }
+
+.inventory {
+    background-color: white;
+    border-style: solid;
+    border-width: 1px;
+    max-width: 100%;
+    width: 77.8vw;
+    border-color: #EDE5D7;
+    padding: 3px 35px 18px; /* Combine padding for consistency */
+    height: 84vh;
+    display: flex;
+    flex-direction: column;
+}
+
+    .inventory h1 {
+        margin-bottom: 10px;
+    }
+
+    .inventory input {
+        border-radius: 20px;
+        padding: 10px 18px;
+        width: 25vw;
+        color: #BBC3CC;
+        background-color: #EDE5D7;
+        border: 1px solid rgb(194, 194, 194);
+        font-size: large;
+        letter-spacing: 1px;
+        margin-bottom: 20px; /* Add space below input */
+    }
+
+    .inventory .filter-dropdown {
+        margin-top: 10px;
+        margin-left: 85%;
+        padding-bottom: 10px;
+    }
+
+        .inventory .filter-dropdown select {
+            padding: 7px;
+            border-radius: 20px;
+            background-color: #EDE5D7;
+            border: none;
+            font-size: small;
+            font-weight: 600;
+        }
+
+            .inventory .filter-dropdown select:hover {
+                background: linear-gradient(265.27deg, #eeae3f 20.55%, #bd9d66 94.17%);
+            }
+
+    .inventory .table-container {
+        max-height: 50vh;
+        overflow-y: scroll;
+        scrollbar-width: none;
+        max-width: 75vw;
+        border-style: solid;
+        border-width: 1px;
+        border-radius: 15px;
+        border-color: #6d7074;
+    }
+
+.functions button.active,
+.functions button:focus {
+    background-color: #EDE5D7;
+    border-radius: 10px;
+}
+
+
+/* ------------------------- PRODUCT MANAGEMENT ---------------------------*/
+.management table {
+    border-style: solid;
+    border-width: 1px;
+    border-color: rgb(189, 189, 190);
+    width: 75vw;
+    border-collapse: collapse; /* Removes gaps between cells for a cleaner look */
+}
+
+    .management table th,
+    .management table td {
+        border-bottom: 1px solid rgb(189, 189, 190); /* Adds border below table cells */
+        text-align: center;
+        padding: 10px;
+    }
+
+    .management table th {
+        position: sticky;
+        top: 0;
+        background-color: white;
+    }
+
+    .management table td {
+        color: #6d7074;
+    }
+
+.management {
+    background-color: white;
+    border-style: solid;
+    border-width: 1px;
+    max-width: 100%;
+    width: 77.8vw;
+    border-color: #EDE5D7;
+    padding: 3px 35px 18px; /* Combine padding for consistency */
+    height: 84vh;
+    display: flex;
+    flex-direction: column;
+}
+
+    .management h1 {
+        margin-bottom: 10px;
+    }
+
+    .management input {
+        border-radius: 20px;
+        padding: 10px 18px;
+        width: 25vw;
+        color: #BBC3CC;
+        background-color: #EDE5D7;
+        border: 1px solid rgb(194, 194, 194);
+        font-size: large;
+        letter-spacing: 1px;
+        margin-bottom: 31px; /* Add space below input */
+    }
+
+    .management .filter-dropdown {
+        position: fixed;
+        left: 50%;
+    }
+
+        .management .filter-dropdown select {
+            padding: 7px;
+            border-radius: 20px;
+            background-color: #EDE5D7;
+            border: none;
+            font-size: small;
+            font-weight: 600;
+        }
+
+            .management .filter-dropdown select:hover {
+                background: linear-gradient(265.27deg, #eeae3f 20.55%, #bd9d66 94.17%);
+            }
+
+    .management .table-container {
+        max-height: 50vh;
+        overflow-y: scroll;
+        scrollbar-width: none;
+        max-width: 75vw;
+        border-style: solid;
+        border-width: 1px;
+        border-radius: 15px;
+        border-color: #6d7074;
+    }
+
+        .management .createprod button {
+            padding: 7px;
+            padding-left: 11px;
+            padding-right: 11px;
+            border-radius: 20px;
+            background-color: #EDE5D7;
+            border: none;
+            font-size: small;
+            font-weight: 600;
+        }
+
+            .management .createprod button:hover {
+                background: linear-gradient(265.27deg, #eeae3f 20.55%, #bd9d66 94.17%);
+                color: white;
+            }
+
+/*------------------------- LOW STOCK -------------------------------------- */
+.stock table {
+    border-style: solid;
+    border-width: 1px;
+    border-color: rgb(189, 189, 190);
+    width: 75vw;
+    border-collapse: collapse; /* Removes gaps between cells for a cleaner look */
+}
+
+    .stock table th,
+    .stock table td {
+        border-bottom: 1px solid rgb(189, 189, 190); /* Adds border below table cells */
+        text-align: center;
+        padding: 10px;
+    }
+
+    .stock table th {
+        position: sticky;
+        top: 0;
+        background-color: white;
+    }
+
+    .stock table td {
+        color: #6d7074;
+    }
+
+.stock {
+    margin-top: -555px;
+    margin-left: 220px;
+    background-color: white;
+    border-style: solid;
+    border-width: 1px;
+    max-width: 100%;
+    width: 77.8vw;
+    border-color: #EDE5D7;
+    padding: 3px 35px 18px; /* Combine padding for consistency */
+    height: 84vh;
+    display: flex;
+    flex-direction: column;
+}
+
+    .stock h1 {
+        margin-bottom: 60px;
+    }
+
+    .stock .table-container {
+        max-height: 50vh;
+        overflow-y: scroll;
+        scrollbar-width: none;
+        max-width: 75vw;
+        border-style: solid;
+        border-width: 1px;
+        border-radius: 15px;
+        border-color: #6d7074;
+    }
+
+.check-prog {
+    margin-top: 25px;
+    display: flex;
+    position: fixed;
+    right: 130px;
+}
+
+    .check-prog a {
+        color: black;
+        text-decoration: none;
+        padding: 7px;
+        padding: 15px;
+        border-radius: 20px;
+        background-color: #EDE5D7;
+        border: none;
+        font-size: small;
+        font-weight: 600;
+    }
+
+        .check-prog a:hover {
+            background: linear-gradient(265.27deg, #eeae3f 20.55%, #bd9d66 94.17%);
+            color: white;
+        }
+
+.item-prog {
+    background-color: white;
+    border-style: solid;
+    border-width: 1px;
+    max-width: 100%;
+    width: 93.7vw;
+    border-color: #EDE5D7;
+    padding: 3px 35px 18px; /* Combine padding for consistency */
+    height: 84vh;
+    margin-left: -10px;
+    padding-left: 50px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+    .item-prog .table-container {
+        max-height: 50vh;
+        overflow-y: scroll;
+        scrollbar-width: none;
+        max-width: 75vw;
+        border-style: solid;
+        border-width: 1px;
+        border-radius: 15px;
+        border-color: #6d7074;
+        margin-left: -150px;
+    }
+
+
+    .item-prog table {
+        border-style: solid;
+        border-width: 1px;
+        border-color: rgb(189, 189, 190);
+        width: 75vw;
+        border-collapse: collapse; /* Removes gaps between cells for a cleaner look */
+    }
+
+        .item-prog table th,
+        .item-prog table td {
+            border-bottom: 1px solid rgb(189, 189, 190); /* Adds border below table cells */
+            text-align: center;
+            padding: 10px;
+        }
+
+        .item-prog table th {
+            position: sticky;
+            top: 0;
+            background-color: white;
+        }
+
+        .item-prog table td {
+            color: #6d7074;
+        }
+
+    .item-prog h1 {
+        margin-top: 50px;
+        margin-bottom: 50px;
+        margin-left: -950px;
+    }
+
+.back {
+    bottom: 40px;
+    display: flex;
+    position: fixed;
+    right: 100px;
+}
+
+    .back a {
+        color: black;
+        text-decoration: none;
+        padding: 15px;
+        border-radius: 20px;
+        background-color: #EDE5D7;
+        border: none;
+        font-size: small;
+        font-weight: 600;
+    }
+
+        .back a:hover {
+            background: linear-gradient(265.27deg, #eeae3f 20.55%, #bd9d66 94.17%);
+            color: white;
+        }
+
+

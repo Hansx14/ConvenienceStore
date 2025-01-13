@@ -1,0 +1,95 @@
+﻿@using System.Web;
+@using System.Web.Mvc;
+@using System.Data;
+@using System.Data.SqlClient;
+@using System.IO;
+
+@{ Layout = "~/Views/Shared/_Layout.cshtml";
+    ViewBag.Title = "Canduman Convenience Store";
+
+    string connStr = @"Data Source=(LocalDB)\MSSQLLocalDB;AttachDbFilename=C:\Users\riche\source\repos\ConvenienceStore\ConvenienceStore\App_Data\Inventory.mdf;Integrated Security=True";
+    // List for all products
+    List<dynamic> allProducts = new List<dynamic>();
+
+    using (var db = new SqlConnection(connStr))
+    {
+        db.Open();
+
+        // Fetch all products
+        using (var cmd = db.CreateCommand())
+        {
+            cmd.CommandType = CommandType.Text;
+            cmd.CommandText = @"SELECT *
+            FROM INVENTORY i JOIN LOW_STOCK l ON i.product_id = l.product_id JOIN SUPPLIER s ON s.supplier_id = l.supplier_id";
+            using (var reader = cmd.ExecuteReader())
+            {
+                if (reader.HasRows)
+                {
+                    while (reader.Read())
+                    {
+                        allProducts.Add(new
+                        {
+                            Image = reader["PRODUCT_IMAGE"].ToString(),
+                            SKU = reader["SKU"].ToString(),
+                            Name = reader["PRODUCT_NAME"].ToString(),
+                            Order_Quantity = reader["ORDER_QUANTITY"].ToString(),
+                            Unit = reader["UNIT_OF_MEASURE"].ToString(),
+                            Rejected_Date = reader["REJECTED_DATE"].ToString(),
+                            Supplier_Name = reader["COMPANY_NAME"].ToString(),
+                            Status = reader["STATUS"].ToString(),
+                            Remarks = reader["REMARKS"].ToString()
+                        });
+                    }
+                }
+            }
+        }
+    }
+    }
+
+    <div class="item-prog">
+        <h1>Item Progress</h1>
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Product</th>
+                        <th>SKU</th>
+                        <th>Name</th>
+                        <th>Order Quantity</th>
+                        <th>Rejected Date</th>
+                        <th>Supplier</th>
+                        <th>Remarks</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (allProducts.Any())
+                    {
+                        for (var i = 0; i < allProducts.Count; i++)
+                        {
+                            var product = allProducts[i];
+                            <tr>
+                                <td><img src="../Home/Image?filename=@HttpUtility.UrlEncode(product.Image)" alt="@product.Name" width="80" height="40"></td>
+                                <td>@product.SKU</td>
+                                <td>@product.Name</td>
+                                <td>@product.Order_Quantity @product.Unit</td>
+                                <td>@product.Rejected_Date</td>
+                                <td>@product.Supplier_Name</td>
+                                <td>@product.Remarks</td>
+                                <td>@product.Status</td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="7">No products available.</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        <div class="back">
+            <a href="@Url.Action("Management", "Home")">Back</a>
+        </div>
+    </div>

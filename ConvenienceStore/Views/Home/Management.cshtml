@@ -1,0 +1,1141 @@
+﻿@using System.Web;
+@using System.Web.Mvc;
+@using System.Data;
+@using System.Data.SqlClient;
+@using System.IO;
+
+@{ Layout = "~/Views/Shared/_Layout.cshtml";
+    ViewBag.Title = "Canduman Convenience Store";
+
+    string connStr = @"Data Source=(LocalDB)\MSSQLLocalDB;AttachDbFilename=C:\Users\riche\source\repos\ConvenienceStore\ConvenienceStore\App_Data\Inventory.mdf;Integrated Security=True";
+
+    // List for all products
+    List<dynamic> allProducts = new List<dynamic>();
+
+    // List for low-stock products
+    List<dynamic> lowStockProducts = new List<dynamic>();
+
+    List<dynamic> suppliers = new List<dynamic>();
+
+    using (var db = new SqlConnection(connStr))
+    {
+        db.Open();
+
+        // Fetch all products
+        using (var cmd = db.CreateCommand())
+        {
+            cmd.CommandType = CommandType.Text;
+            cmd.CommandText = "SELECT * FROM INVENTORY";
+            using (var reader = cmd.ExecuteReader())
+            {
+                if (reader.HasRows)
+                {
+                    while (reader.Read())
+                    {
+                        allProducts.Add(new
+                        {
+                            Image = reader["PRODUCT_IMAGE"].ToString(),
+                            SKU = reader["SKU"].ToString(),
+                            Name = reader["PRODUCT_NAME"].ToString(),
+                            Quantity = reader["QUANTITY"].ToString(),
+                            Description = reader["DESCRIPTION"].ToString(),
+                            Category = reader["CATEGORY_ID"].ToString(),
+                            Last_Update = reader["LAST_UPDATED"].ToString(),
+                            Unit = reader["UNIT_OF_MEASURE"].ToString(),
+                            Expiration_date = reader["EXPIRATION_DATE"].ToString()
+                        });
+                    }
+                }
+            }
+        }
+
+        // Fetch low-stock products
+        using (var cmd = db.CreateCommand())
+        {
+            cmd.CommandType = CommandType.Text;
+            cmd.CommandText = @"
+            SELECT *
+            FROM INVENTORY i JOIN LOW_STOCK l ON i.PRODUCT_ID = l.PRODUCT_ID JOIN SUPPLIER s ON s.SUPPLIER_ID = l.SUPPLIER_ID";
+
+            using (var reader = cmd.ExecuteReader())
+            {
+                if (reader.HasRows)
+                {
+                    while (reader.Read())
+                    {
+                        lowStockProducts.Add(new
+                        {
+                            Image = reader["PRODUCT_IMAGE"].ToString(),
+                            SKU = reader["SKU"].ToString(),
+                            Name = reader["PRODUCT_NAME"].ToString(),
+                            Quantity = reader["QUANTITY"].ToString(),
+                            Description = reader["DESCRIPTION"].ToString(),
+                            Low_Stock = reader["DATE_LOW_STOCK"].ToString(),
+                            Unit = reader["UNIT_OF_MEASURE"].ToString(),
+                            Low_id = reader["LOW_STOCK_ID"].ToString(),
+                            Prod_id = reader["PRODUCT_ID"].ToString(),
+                            Supp_id = reader["SUPPLIER_ID"].ToString()
+                        });
+                    }
+                }
+            }
+        }
+        using (var cmd = db.CreateCommand())
+        {
+            cmd.CommandType = CommandType.Text;
+            cmd.CommandText = @"SELECT * FROM SUPPLIER";
+            using (var reader = cmd.ExecuteReader())
+            {
+                if (reader.HasRows)
+                {
+                    while (reader.Read())
+                    {
+                        suppliers.Add(new
+                        {
+                            Supplier_id = reader["SUPPLIER_ID"].ToString(),
+                            Company_name = reader["COMPANY_NAME"].ToString(),
+                            Address = reader["ADDRESS"].ToString(),
+                            Contact_No = reader["CONTACT_NUMBER"].ToString(),
+                            Product_Offer = reader["PRODUCT_OFFER"].ToString()
+                        });
+                    }
+                }
+            }
+        }
+    } }
+<div class="section" style="display: inline-flex;">
+    <div class="functions">
+        <button type="button" class="btn btn-inventory" onclick="openTab(event, 'Inventory')" id="defaultOpen">
+            Inventory
+        </button>
+        <button type="button" class="btn btn-management" onclick="openTab(event, 'Management')">
+            Product Management
+        </button>
+        <button type="button" class="btn btn-stock" onclick="openTab(event, 'Stock')">
+            Low Stocks
+        </button>
+    </div>
+
+    <!-- INVENTORY -->
+    <div id="Inventory" class="tabcontent">
+        <div class="inventory">
+            <h1>Inventory</h1>
+            <input type="text" id="search" name="search" onkeyup="searchFunction()" placeholder="Search" />
+            <div class="filter-dropdown">
+                <select id="filter" name="filter" onchange="filterFunction()">
+                    <option value="">Filter</option>
+                    <option value="1">SKU</option>
+                    <option value="2">Name</option>
+                    <option value="3">Quantity</option>
+                    <option value="5">Category</option>
+                    <option value="6">Expiration Date</option>
+                </select>
+            </div>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Product</th>
+                            <th>SKU</th>
+                            <th>Name</th>
+                            <th>Quantity</th>
+                            <th>Description</th>
+                            <th>Category</th>
+                            <th>Expiration Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (allProducts.Any())
+                        {
+                            for (var i = 0; i < allProducts.Count; i++)
+                            {
+                                var product = allProducts[i];
+                                <tr>
+                                    <td><img src="../Home/Image?filename=@HttpUtility.UrlEncode(product.Image)" alt="@product.Name" width="80" height="40"></td>
+                                    <td>@product.SKU</td>
+                                    <td>@product.Name</td>
+                                    <td>@product.Quantity @product.Unit</td>
+                                    <td>@product.Description</td>
+                                    <td>@product.Category</td>
+                                    <td>@product.Expiration_date</td>
+                                </tr>
+ }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="7">No products available.</td>
+                            </tr>
+}
+                    </tbody>
+                </table>
+            </div>
+
+
+        </div>
+    </div>
+
+    <!--PRODUCT MANAGEMENT SECTION-->
+    <form id="productForm" enctype="multipart/form-data">
+        <div id="Management" class="tabcontent">
+            <div class="management">
+                <h1>Product Management</h1>
+                <input type="text" id="search" name="search" value="Search" />
+                <div class="menu">
+                    <div class="createprod">
+                        <button type="button" class="btn btn-createProduct" onclick="on()">Create Product</button>
+                    </div>
+                    <div class="editprod">
+                        <button type="button" class="btn-editProduct" onclick="showEditProduct()">Edit Product</button>
+                    </div>
+                </div>
+                <div class="filter-dropdown">
+                    <select id="filter" name="filter">
+                        <option value="filter">Filter</option>
+                        <option value="SKU">SKU</option>
+                        <option value="name">Name</option>
+                        <option value="quantity">Quantity</option>
+                        <option value="category">Category</option>
+                        <option value="last-update">Last Update</option>
+                    </select>
+                </div>
+
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Product</th>
+                                <th>SKU</th>
+                                <th>Name</th>
+                                <th>Quantity</th>
+                                <th>Description</th>
+                                <th>Category</th>
+                                <th>Last Update</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (allProducts.Any())
+                            {
+                                for (var i = 0; i < allProducts.Count; i++)
+                                {
+                                    var product = allProducts[i];
+                                    <tr>
+                                        <td><img src="../Home/Image?filename=@HttpUtility.UrlEncode(product.Image)" alt="@product.Name" width="80" height="40"></td>
+                                        <td><input type="hidden" name="sku_@i" id="sku_@i" value="@product.SKU" />@product.SKU</td>
+                                        <td>@product.Name</td>
+                                        <td>@product.Quantity @product.Unit</td>
+                                        <td>@product.Description</td>
+                                        <td>@product.Category</td>
+                                        <td>@product.Last_Update</td>
+                                    </tr>
+ }
+                            }
+                            else
+                            {
+                                <tr>
+                                    <td colspan="7">No products available.</td>
+                                </tr>
+}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        </form>
+
+    <script>
+        document.getElementById("productForm").addEventListener("submit", function (event) {
+            event.preventDefault(); // Prevent default form submission
+
+            // Gather form data
+            const formData = new FormData(this);
+
+            // Send form data via AJAX
+            fetch('/ControllerName/Management', {
+                method: 'POST',
+                body: formData
+            })
+                .then(response => {
+                    if (response.ok) {
+                        alert("Product added successfully!");
+                        // Clear the form
+                        this.reset();
+                    } else {
+                        alert("Failed to add product. Please try again.");
+                    }
+                })
+                .catch(error => console.error('Error:', error));
+        });
+
+    </script>
+
+</div>
+<form id="createForm" method="post" action="../Home/Management" enctype="multipart/form-data">
+    <div id="createProduct" onclick="off()">
+        <div class="create-container" onclick="event.stopPropagation()">
+            <div class="header">
+                <h1>CREATE PRODUCT</h1>
+            </div>
+            <div class="input-det">
+                <div class="row">
+                    <label for="product_name">Product Name</label>
+                    <label for="sku">Product Code (SKU)</label>
+                    <label for="category_id">Category</label>
+                    <label for="quantity">Quantity</label>
+                    <label for="unit_of_measure">Unit of Measure</label>
+                    <label for="description">Description</label>
+                    <label for="supplier_id">Supplier</label>
+                    <label for="expiration_date">Expiration Date</label>
+                    <label for="low_stock_threshold">Reorder Level</label>
+                    <label for="product_image">Product Image</label>
+                </div>
+                <div class="row2">
+                    <input type="text" id="product_name" name="product_name" required placeholder="Product Name" />
+                    <input type="text" id="sku" name="sku" required placeholder="Product Code" />
+                    <input type="text" id="category_id" name="category_id" required placeholder="Category" />
+                    <input type="text" id="quantity" name="quantity" required placeholder="Quantity" />
+                    <select id="unit_of_measure" name="unit_of_measure" required>
+                        <!-- Count-Based Units -->
+                        <optgroup label="Count-Based Units">
+                            <option value="Piece">Piece</option>
+                            <option value="Pack">Pack</option>
+                            <option value="Dozen">Dozen</option>
+                            <option value="Case">Case</option>
+                            <option value="Box">Box</option>
+                            <option value="Carton">Carton</option>
+                            <option value="Can">Can</option>
+                            <option value="Bottle">Bottle</option>
+                            <option value="Roll">Roll</option>
+                            <option value="Bar">Bar</option>
+                            <option value="Bundle">Bundle</option>
+                            <option value="Strip">Strip</option>
+                            <option value="Set">Set</option>
+                        </optgroup>
+
+                        <!-- Weight-Based Units -->
+                        <optgroup label="Weight-Based Units">
+                            <option value="Kilogram">Kilogram (kg)</option>
+                            <option value="Gram">Gram (g)</option>
+                        </optgroup>
+
+                        <!-- Volume-Based Units -->
+                        <optgroup label="Volume-Based Units">
+                            <option value="Liter">Liter (L)</option>
+                            <option value="Milliliter">Milliliter (mL)</option>
+                            <option value="Gallon">Gallon</option>
+                            <option value="Pint">Pint</option>
+                            <option value="Cup">Cup</option>
+                        </optgroup>
+
+                    </select>
+
+                    <input type="text" id="description" name="description" required placeholder="Description" />
+                    @if (suppliers.Any())
+                    {
+                        <select id="supplier_id" name="supplier_id" required>
+                            <option value="">Select a Supplier</option>
+                            @foreach (var supplier in suppliers)
+                            {
+                                <option value="@supplier.Supplier_id">@supplier.Company_name</option>
+                            }
+                            <option value="createSupplier">Create Supplier</option>
+                        </select>
+                    }
+                    else
+                    {
+                        <select id="supplier_id" name="supplier_id" required>
+                            <option value="createSupplier">No suppliers available - Create Supplier</option>
+                        </select>
+                    }
+
+                    <input type="date" id="expiration_date" name="expiration_date" required placeholder="Expiration Date" />
+                    <input type="text" id="low_stock_threshold" name="low_stock_threshold" required placeholder="Reorder Level" />
+                    <input type="file" id="product_image" name="product_image" accept="image/jpg,image/bmp,image/png,image/gif" required />
+                </div>
+            </div>
+            <div class="button-interact">
+                <div class="cancel">
+                    <button type="button" id="btnCancel" onclick="hideEditProduct2()">Cancel</button>
+                </div>
+                <div class="submit">
+                    <input type="submit" id="btnCreate" value="Create" />
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+
+
+<div id="editProduct">
+    <div class="edit-container">
+        <div class="header">
+            <h1>EDIT PRODUCT</h1>
+        </div>
+        <div class="input-det">
+            <div class="row">
+                <label for="searchSku" style="margin-bottom: -30px; position: fixed;">Search Product</label>
+                <label for="product_name2" style="margin-top: 85px;">Product Name</label>
+                <label for="skuField2">Product Code(SKU)</label>
+                <label for="category_id2">Category</label>
+                <label for="quantity2">Quantity</label>
+                <label for="unit_of_measure2">Unit of Measure</label>
+                <label for="description2">Description</label>
+                <label for="supplier_id2">Supplier</label>
+                <label for="expiration_date2">Expiration Date</label>
+                <label for="low_stock_threshold2">Reorder Level</label>
+            </div>
+            <div class="row2">
+                <input type="text" id="searchSku" name="searchSku" required placeholder="Enter SKU" />
+                <input type="button" id="searchBtn" value="Search" /> <br />
+                <input type="text" id="product_name2" name="product_name2" placeholder="Product Name" />
+                <input type="text" id="skuField2" name="skuField2" placeholder="SKU" />
+                <input type="text" id="category_id2" name="category_id2" placeholder="Category" />
+                <input type="text" id="quantity2" name="quantity2" placeholder="Quantity" />
+                <select id="unit_of_measure2" name="unit_of_measure2" required>
+                    <optgroup label="Count-Based Units">
+                        <option value="Piece">Piece</option>
+                        <option value="Pack">Pack</option>
+                        <option value="Dozen">Dozen</option>
+                        <option value="Case">Case</option>
+                        <option value="Box">Box</option>
+                        <option value="Carton">Carton</option>
+                        <option value="Can">Can</option>
+                        <option value="Bottle">Bottle</option>
+                        <option value="Roll">Roll</option>
+                        <option value="Bar">Bar</option>
+                        <option value="Bundle">Bundle</option>
+                        <option value="Strip">Strip</option>
+                        <option value="Set">Set</option>
+                    </optgroup>
+                    <optgroup label="Weight-Based Units">
+                        <option value="Kilogram">Kilogram (kg)</option>
+                        <option value="Gram">Gram (g)</option>
+                    </optgroup>
+                    <optgroup label="Volume-Based Units">
+                        <option value="Liter">Liter (L)</option>
+                        <option value="Milliliter">Milliliter (mL)</option>
+                        <option value="Gallon">Gallon</option>
+                        <option value="Pint">Pint</option>
+                        <option value="Cup">Cup</option>
+                    </optgroup>
+                </select>
+
+                <input type="text" id="description2" name="description2" placeholder="Description" />
+                @if (suppliers.Any())
+                {
+                    <select id="supplier_id" name="supplier_id" required>
+                        <option value="">Select a Supplier</option>
+                        @foreach (var supplier in suppliers)
+                        {
+                            <option value="@supplier.Supplier_id">@supplier.Company_name</option>
+                        }
+                        </select>
+                 }
+                        <input type="date" id="expiration_date2" name="expiration_date2" placeholder="Expiration Date" />
+                        <input type="text" id="low_stock_threshold2" name="low_stock_threshold2" placeholder="Reorder Level" />
+                </div>
+        </div>
+        <div class="button-interact">
+            <div class="cancel">
+                <button type="button" onclick="hideEditProduct()">Cancel</button>
+            </div>
+            <div class="submit">
+                <input type="button" id="update-btn" name="update-btn" value="Update" />
+                <input type="button" id="delete-btn" name="delete-btn" value="Delete" />
+            </div>
+        </div>
+
+    </div>
+</div>
+
+
+<style>
+    
+    #createProduct {
+        position: fixed;
+        display: none;
+        width: 100%;
+        height: 100%;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: rgba(0,0,0,0.5);
+        z-index: 2;
+        cursor: pointer;
+    }
+
+    .create-container {
+        width: 40vw;
+        height: 70vh;
+        background-color: #ffffff;
+        border-style: solid;
+        border-width: 1px;
+        border-radius: 15px;
+        padding: 20px;
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+    }
+
+        .create-container .header {
+            position: fixed;
+            margin-left: 180px;
+            margin-top: -20px;
+            padding-bottom: 20px;
+        }
+
+        .create-container .row {
+            display: flex;
+            flex-direction: column;
+            position: fixed;
+            left: 15%;
+            top: 20%;
+        }
+
+        .create-container .row2 {
+            display: flex;
+            flex-direction: column;
+            position: fixed;
+            left: 50%;
+            top: 19%;
+        }
+
+            .create-container .row2 input,
+            .create-container .row2 select {
+                width: 15vw;
+                height: 4vh;
+                margin-bottom: 6px;
+                margin-left: 30px;
+                padding: 5px;
+                border-radius: 10px;
+                background-color: #EDE5D7;
+                border: none;
+                font-size: 0.9rem;
+                font-family: Arial, sans-serif;
+                box-sizing: border-box;
+            }
+
+            .create-container .row2 select {
+                width: 15vw;
+                height: 4vh;
+            }
+
+        .create-container label {
+            margin-top: 3px;
+            padding-bottom: 10px;
+        }
+
+        .create-container #product_image {
+            padding: 10px;
+            height: 6vh;
+        }
+
+        .create-container .button-interact {
+            padding: 10px;
+            display: inline-flex;
+            position: fixed;
+            bottom: 5%;
+            left: 30%;
+        }
+
+            .create-container .button-interact #btnCancel {
+                position: fixed;
+                bottom: 5%;
+                border-radius: 10px;
+                padding: 5px;
+                color: white;
+                background-color: red;
+                border: none;
+                padding-right: 15px;
+                padding-left: 15px;
+            }
+
+            .create-container .button-interact #btnCreate {
+                position: fixed;
+                left: 60%;
+                bottom: 5%;
+                padding: 5px;
+                border-radius: 10px;
+                color: white;
+                background-color: forestgreen;
+                border: none;
+                padding-right: 15px;
+                padding-left: 15px;
+            }
+
+                .create-container .row2 input:hover,
+                .create-container .row2 select:hover,
+                .create-container .button-interact #btnCancel:hover,
+                .create-container .button-interact #btnCreate:hover {
+                    background-color: #bd9d66;
+                }
+
+        .create-container .input-det {
+            align-items: center;
+            display: flex;
+            flex-direction: row;
+            padding: 10px;
+            margin-left: 50px;
+        }
+
+    .management .table-container {
+        max-height: 50vh;
+        overflow-y: scroll;
+        scrollbar-width: none;
+        max-width: 75vw;
+        border-style: solid;
+        border-width: 1px;
+        border-radius: 15px;
+        border-color: #6d7074;
+        position: fixed;
+        top: 40%;
+    }
+
+    .management .menu {
+        display: flex;
+        flex-direction: row;
+        align-items: flex-start;
+        left: 60%;
+        top: 34%;
+        position: fixed;
+    }
+
+        .management .menu .createprod {
+            position: fixed;
+            left: 68%;
+        }
+
+        .management .menu .editprod {
+            position: fixed;
+            left: 77%;
+        }
+
+    .management .filter-dropdown {
+        position: fixed;
+        left: 85%;
+        top: 33.5%;
+    }
+
+
+    #searchBtn {
+        padding: 7px 11px;
+        border-radius: 20px;
+        background-color: #EDE5D7;
+        border: none;
+        font-size: small;
+        font-weight: 600;
+        cursor: pointer;
+    }
+
+        #searchBtn:hover {
+            background: linear-gradient(265.27deg, #eeae3f 20.55%, #bd9d66 94.17%);
+            color: white;
+        }
+
+
+    .management .editprod button {
+        padding: 7px;
+        padding-left: 11px;
+        padding-right: 11px;
+        border-radius: 20px;
+        background-color: #EDE5D7;
+        border: none;
+        font-size: small;
+        font-weight: 600;
+    }
+
+        .management .editprod button:hover {
+            background: linear-gradient(265.27deg, #eeae3f 20.55%, #bd9d66 94.17%);
+            color: white;
+        }
+
+    #editProduct {
+        position: fixed;
+        display: none;
+        width: 100%;
+        height: 100%;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: rgba(0,0,0,0.5);
+        z-index: 3;
+        cursor: pointer;
+    }
+
+    .edit-container {
+        width: 40vw;
+        height: 75vh;
+        background-color: #ffffff;
+        border-style: solid;
+        border-width: 1px;
+        border-radius: 15px;
+        padding: 20px;
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+    }
+
+        .edit-container .header {
+            position: fixed;
+            margin-left: 180px;
+            margin-top: -20px;
+            margin-bottom: 20px;
+        }
+
+
+        .edit-container .row {
+            display: flex;
+            flex-direction: column;
+            position: fixed;
+            margin-top: 80%;
+        }
+
+
+        .edit-container .row2 {
+            display: flex;
+            flex-direction: column;
+            position: fixed;
+            left: 50%;
+            margin-top: 80%;
+        }
+
+            .edit-container .row2 input,
+            .edit-container .row2 select {
+                width: 15vw;
+                height: 3vh;
+                margin-bottom: 6px;
+                margin-left: 30px;
+                padding: 5px;
+                border-radius: 10px;
+                background-color: #EDE5D7;
+                border: none;
+                font-size: 0.9rem;
+                font-family: Arial, sans-serif;
+                box-sizing: border-box;
+            }
+            .edit-container .row2 #unit_of_measure2,
+            .edit-container .row2 #supplier_id2 {
+                width: 15vw;
+            }
+              
+
+                .edit-container .row2 input {
+                    height: 4vh;
+                }
+
+    @@media (max-width: 768px) {
+        .edit-container {
+            width: 90vw;
+            height: 90vh;
+        }
+
+            .edit-container .row2 input,
+            .edit-container .row2 select {
+                width: 80vw;
+                margin-left: 0;
+            }
+    }
+
+
+    #searchBtn:focus,
+    #searchBtn:active,
+    .edit-container .row2 input:focus,
+    .edit-container .row2 select:focus {
+        outline: 2px solid #eeae3f;
+        box-shadow: 0 0 5px #eeae3f;
+    }
+
+
+    .edit-container .row2 select {
+        width: 15.5vw;
+        height: 4vh;
+    }
+
+    .edit-container label {
+        margin-top: 3px;
+        padding-bottom: 10px;
+    }
+
+    .edit-container #product_image {
+        padding: 10px;
+    }
+
+    .edit-container .button-interact {
+        padding: 10px;
+        display: flex;
+        flex-direction: row;
+        left: 30%;
+        margin-top: 70%;
+        position: fixed;
+    }
+
+        .edit-container .button-interact .cancel {
+            margin-left: -30px;
+            padding-right: 70px;
+        }
+
+        .edit-container .button-interact .submit #update-btn {
+            padding: 5px;
+            margin-left: 10px;
+            border-radius: 10px;
+            color: white;
+            background-color: #eeae3f;
+        }
+
+        .edit-container .button-interact .submit #delete-btn {
+            padding: 5px;
+            border-radius: 10px;
+            color: white;
+            background-color: #eeae3f;
+        }
+
+            .edit-container .button-interact .submit #delete-btn:hover {
+                background-color: #ff0000;
+            }
+
+        .edit-container .button-interact .submit #update-btn:hover {
+            background-color: #00ff21;
+        }
+
+    .edit-container .input-det {
+        align-items: center;
+        display: flex;
+        flex-direction: row;
+        padding: 10px;
+        margin-left: 50px;
+    }
+
+    .btn-purchase {
+        background-color: #eeae3f;
+        color: white;
+        transition: background-color 0.3s ease;
+        border-radius: 10px;
+        padding: 10px;
+        border: none;
+    }
+
+.btn-purchase:hover {
+    background-color: #218838;
+}
+
+#confirm-purchase {
+    margin-top: 10px;
+    background-color: forestgreen;
+    color: white;
+    transition: background-color 0.3s ease;
+    border-radius: 10px;
+    padding: 10px;
+    border: none;
+    margin-left: 60px;
+}
+
+#confirm-purchase:hover {
+    background-color: #EDE5D7;
+}
+
+/* Purchase Section */
+
+
+    #purchase-section {
+        position: fixed;
+        display: none;
+        width: 100%;
+        height: 100%;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: rgba(0,0,0,0.5);
+        z-index: 101;
+        cursor: pointer;
+    }
+
+.purchase-section {
+    width: 28%;
+    top: 23%;
+    left: 33%;
+    padding: 20px;
+    background-color: #fff;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: fixed;
+}
+
+.purchase-section h2 {
+    margin-top: 0;
+    font-size: 18px;
+    color: #333;
+}
+
+#selected-product img {
+    display: block;
+    margin: 10px 0;
+}
+
+#selected-product p {
+    margin: 5px 0;
+    font-size: 14px;
+    color: #555;
+}
+
+#quantity-ordered {
+    display: block;
+    margin: 10px 0;
+    padding: 8px;
+    width: 100%;
+    max-width: 300px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+/* Responsive Design */
+@@media (max-width: 768px) {
+    .table-container, .purchase-section {
+        width: 100%;
+        padding: 10px;
+    }
+
+    th, td {
+        font-size: 12px;
+        padding: 8px;
+    }
+
+    button {
+        font-size: 12px;
+        padding: 6px 10px;
+    }
+}
+
+    #btn-Cancel {
+        margin-top: 10px;
+        background-color: red;
+        color: white;
+        transition: background-color 0.3s ease;
+        border-radius: 10px;
+        padding: 10px;
+        border: none;
+        margin-left: 50px;
+    }
+
+    #btn-Cancel:hover {
+        background-color: #EDE5D7;
+    }
+
+</style>
+
+
+<!-- LOW STOCKS -->
+<div id="Stock" class="tabcontent">
+    <div class="stock">
+        <h1>Low Stock</h1>
+        <div class="check-prog">
+            <a href="@Url.Action("CreateProg", "Home")">Check Progress</a>
+        </div>
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Product</th>
+                        <th>SKU</th>
+                        <th>Name</th>
+                        <th>Quantity</th>
+                        <th>Description</th>
+                        <th>Date</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (lowStockProducts.Any())
+                    {
+                        foreach (var product in lowStockProducts)
+                        {
+                            <tr>
+                                <td><img src="../Home/Image?filename=@HttpUtility.UrlEncode(product.Image)" alt="@product.Name" width="80" height="40"></td>
+                                <td>@product.SKU</td>
+                                <td>@product.Name</td>
+                                <td>@product.Quantity @product.Unit</td>
+                                <td>@product.Description</td>
+                                <td>@product.Low_Stock</td>
+                                <td>
+                                    <button class="btn-purchase" onclick="showPurchaseProduct()"
+                                            data-image="@HttpUtility.UrlEncode(product.Image)"
+                                            data-sku="@product.SKU"
+                                            data-name="@product.Name"
+                                            data-quantity="@product.Quantity"
+                                            data-description="@product.Description"
+                                            data-low-stock="@product.Low_Stock"
+                                            data-low-stock-id="@product.Low_id"
+                                            data-product-id="@product.Prod_id"
+                                            data-supplier-id="@product.Supp_id">
+                                        Purchase
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="7">No low-stock products available.</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div id="purchase-section">
+    <div class="purchase-section">
+        <h2>Purchase Details</h2>
+        <div id="selected-product">
+            <!-- Selected product details will appear here -->
+        </div>
+    </div>
+</div>
+
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const purchaseButtons = document.querySelectorAll(".btn-purchase");
+        const selectedProductContainer = document.getElementById("selected-product");
+
+        purchaseButtons.forEach(button => {
+            button.addEventListener("click", function () {
+                // Extract product details from data attributes
+                const productImage = this.dataset.image;
+                const productSKU = this.dataset.sku;
+                const productName = this.dataset.name;
+                const productQuantity = this.dataset.quantity;
+                const productDescription = this.dataset.description;
+                const productLowStock = this.dataset.lowStock;
+                const lowStockId = this.dataset.lowStockId;
+                const supplierId = this.dataset.supplierId;
+                const productId = this.dataset.productId;
+
+                // Update the purchase-section with selected product details
+                selectedProductContainer.innerHTML = `
+                <img src="../Home/Image?filename=${productImage}" alt="${productName}" width="80" height="100">
+                <p><strong>SKU:</strong> ${productSKU}</p>
+                <p><strong>Name:</strong> ${productName}</p>
+                <p><strong>Quantity:</strong> ${productQuantity}</p>
+                <p><strong>Description:</strong> ${productDescription}</p>
+                <p><strong>Low Stock Date:</strong> ${productLowStock}</p>
+                <label for="quantity-ordered"><strong>Order Quantity:</strong></label>
+                <input type="number" id="quantity-ordered" name="quantity-ordered" />
+                <button type="button" id="btn-Cancel" onclick="hideEditProduct3()">Cancel</button>
+                <button id="confirm-purchase">Confirm</button>`;
+
+                // Add event listener for "Confirm Purchase"
+                document.getElementById("confirm-purchase").addEventListener("click", function () {
+                    const orderQuantity = document.getElementById("quantity-ordered").value;
+
+                    $.post("../Home/PurchaseLowStock", {
+                        quantity_ordered: orderQuantity,
+                        low_stock_id: lowStockId,
+                        supplier_id: supplierId,
+                        product_id: productId
+                    })
+                        .done(function (response) {
+                            if (response && response.length > 0 && response[0].success) {
+                                alert(response[0].message); // Show success message from backend
+                                location.reload(); // Reload the page
+                            } else {
+                                alert("An error occurred while processing your request.");
+                            }
+                        })
+                        .fail(function (xhr, status, error) {
+                            console.error("Error:", error);
+                            alert("Failed to communicate with the server. Please try again later.");
+                        });
+                });
+            });
+        });
+    });
+
+
+</script>
+
+<script src="~/Scripts/MyScript/jquery-3.7.1.min.js"></script>
+<script src="~/Scripts/MyScript/Search.js"></script>
+
+@section Scripts {
+    <script>
+        function showPurchaseProduct() {
+            document.getElementById("purchase-section").style.display = "block";
+        }
+
+        // Hide the Edit Product modal
+        function hideEditProduct3() {
+            document.getElementById("purchase-section").style.display = "none";
+        }
+
+        // Close the modal if the background is clicked
+        document.getElementById("purchase-section").onclick = function (event) {
+            if (event.target === this) {
+                hideEditProduct();
+            }
+        };
+
+        // Show the Edit Product modal
+        function showEditProduct() {
+            document.getElementById("editProduct").style.display = "block";
+        }
+
+        // Hide the Edit Product modal
+        function hideEditProduct() {
+            document.getElementById("editProduct").style.display = "none";
+        }
+
+        // Close the modal if the background is clicked
+        document.getElementById("editProduct").onclick = function (event) {
+            if (event.target === this) {
+                hideEditProduct();
+            }
+        };
+
+        function openTab(evt, tabName) {
+            var i, tabcontent, tablinks;
+            tabcontent = document.getElementsByClassName("tabcontent");
+            for (i = 0; i < tabcontent.length; i++) {
+                tabcontent[i].style.display = "none";
+            }
+            tablinks = document.getElementsByClassName("btn");
+            for (i = 0; i < tablinks.length; i++) {
+                tablinks[i].className = tablinks[i].className.replace(" active", "");
+            }
+            document.getElementById(tabName).style.display = "block";
+            evt.currentTarget.className += " active";
+        }
+
+        document.getElementById("defaultOpen").click();
+
+        function on() {
+            document.getElementById("createProduct").style.display = "block";
+        }
+
+        function off() {
+            document.getElementById("createProduct").style.display = "none";
+        }
+
+        function hideEditProduct2() {
+            document.getElementById("createProduct").style.display = "none";
+        }
+
+        // Close the modal if the background is clicked
+        document.getElementById("createProduct").onclick = function (event) {
+            if (event.target === this) {
+                hideEditProduct2();
+            }
+        };
+
+    </script>
+}
